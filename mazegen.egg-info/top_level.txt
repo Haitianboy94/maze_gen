@@ -2,3 +2,4 @@ assets
 dist
 mazegen
 mlx
+test

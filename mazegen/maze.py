@@ -1,14 +1,15 @@
 import random
 from typing import List, Tuple, Any
 
-from cell import Cell
-from exceptions import MazeGenerationError
+from mazegen.cell import Cell
+
+
+class MazeError(Exception):
+    pass
 
 
 class Maze:
-
     """Maze structure and generation logic."""
-    # -------------------------------------------------------------------------
 
     def __init__(
             self,
@@ -27,6 +28,10 @@ class Maze:
         self.path = path
         self.perfect = perfect
         self.seed = seed
+        self.ready = False
+
+        # Create grid with all walls closed
+        self.grid: list[list[Cell]] = []
 
         def validate_coordinates(
             coord: Tuple[int, int],
@@ -38,16 +43,16 @@ class Maze:
 
             if x < 0 or x >= width or y < 0 or y >= height:
                 raise ValueError("Coordinates are out of bounds.")
-            
-        if self.width <= 0 or self.height <= 0:
-            raise ValueError("WIDTH and HEIGHT must be positive integers.")
 
-        # Validate bounds
-        validate_coordinates(self.entry, self.width, self.height)
-        validate_coordinates(self.exit, self.width, self.height)
+        try:
+            if self.width <= 0 or self.height <= 0:
+                raise ValueError("WIDTH and HEIGHT must be positive integers.")
 
-        # Create grid with all walls closed
-        self.grid: list[list[Cell]] = []
+            validate_coordinates(self.entry, self.width, self.height)
+            validate_coordinates(self.exit, self.width, self.height)
+        except ValueError as e:
+            print("Error with maze settings:", e)
+            return
 
         for row in range(self.height):
             current_row = []
@@ -56,10 +61,15 @@ class Maze:
                 current_row.append(new_cell)
             self.grid.append(current_row)
 
+        self.ready = True
+
     # -------------------------------------------------------------------------
     def generate(self) -> None:
         if self.seed > 0:
             random.seed(self.seed)
+        if not self.ready:
+            print("Maze tried to generate with incorrect settings")
+            return
         if self.perfect:
             self.generate_perfect()
         else:
@@ -150,8 +160,7 @@ class Maze:
 
         return False
 
-    # ----------------------------------------------------
-
+    # -------------------------------------------------------------------------
     def _generate_perfect(self) -> None:
         """Generate perfect maze using DFS backtracking."""
 
@@ -183,8 +192,8 @@ class Maze:
                 stack.append(neighbor)
             else:
                 stack.pop()
-    # ------------------------------------------------------
 
+    # -------------------------------------------------------------------------
     def _add_loops(self, loop_factor: float = 0.10) -> None:
         walls = []
 
@@ -203,8 +212,7 @@ class Maze:
         for i in range(loops_to_add):
             self._carve_passage(*walls[i])
 
-    # ------------------------------------------------------
-
+    # -------------------------------------------------------------------------
     def shortest_path(self) -> List[str]:
         """Return shortest path from entry to exit using NSEW."""
 
@@ -254,8 +262,7 @@ class Maze:
         path.reverse()
         return path
 
-    # ------------------------------------------------------
-    # 42 LOGO
+    # -------------------------------------------------------------------------
     def _logo_cells(self) -> set[tuple[int, int]]:
         """Return cells that form the '42' logo in the center of the maze."""
         cx = self.width // 2
@@ -288,6 +295,7 @@ class Maze:
 
         return cells
 
+    # -------------------------------------------------------------------------
     def _apply_logo(self) -> None:
         """Re-wall all logo cells to form '42' in the center."""
 
@@ -295,7 +303,7 @@ class Maze:
         MIN_HEIGHT = 7
 
         if self.width < MIN_WIDTH or self.height < MIN_HEIGHT:
-            raise MazeGenerationError(
+            raise MazeError(
                 f"Maze too small for '42' logo"
                 f"(minimum {MIN_WIDTH}x{MIN_HEIGHT}, "
                 f"got {self.width}x{self.height})."
@@ -305,12 +313,12 @@ class Maze:
 
         # Check BEFORE discarding
         if self.entry in logo:
-            raise MazeGenerationError(
+            raise MazeError(
                 f"Entry point {self.entry} "
                 f"conflicts with the '42' logo position."
             )
         if self.exit in logo:
-            raise MazeGenerationError(
+            raise MazeError(
                 f"Exit point {self.exit} "
                 f"conflicts with the '42' logo position."
             )

@@ -2,8 +2,6 @@ from pathlib import Path
 from typing import Tuple, Dict
 import random
 
-from exceptions import ConfigError
-
 
 Config = tuple[int,
                int,
@@ -12,6 +10,10 @@ Config = tuple[int,
                Path,
                bool,
                int]
+
+
+class ConfigError(Exception):
+    pass
 
 
 def parse_bool(value: str) -> bool:

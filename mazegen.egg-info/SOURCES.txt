@@ -1,6 +1,7 @@
 README.md
 pyproject.toml
 mazegen/__init__.py
+mazegen/cell.py
 mazegen/maze.py
 mazegen.egg-info/PKG-INFO
 mazegen.egg-info/SOURCES.txt
@@ -11,3 +12,4 @@ mlx/__init__.py
 mlx/mlx.py
 mlx/test/mlxtest.py
 mlx/test/simple_test.py
+test/test.py
